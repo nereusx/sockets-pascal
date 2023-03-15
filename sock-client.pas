@@ -72,8 +72,17 @@ begin
 		if fpConnect(sock, @saddr, sizeOf(saddr)) = 0 then begin
 			repeat
 				n := scRecvLn(sock, msg);
-				if n > 0 then WriteLn('> ', msg);
-				scSendLn(sock, 'test master');
+				if n > 0 then begin
+					WriteLn('> ', msg);
+					scSendLn(sock, 'test master');
+					n := scRecvLn(sock, msg);
+					if n > 0 then begin
+						WriteLn('> ', msg);
+						scSendLn(sock, 'quit master');
+						n := scRecvLn(sock, msg);
+						if n > 0 then WriteLn('> ', msg);
+						end
+					end
 			until n <= 0;
 			end
 		else warn('failed to connect');

@@ -9,6 +9,19 @@ Program SocketServer;
 Uses
 	{$ifdef unix}cthreads, {$endif} Sockets;
 
+const
+	host   = 'localhost'; (* or '0.0.0.0' *)
+	port   : LongInt = 4096;
+	domain = AF_INET;
+	protc  = IPPROTO_TCP;
+
+Var
+	shutdown : LongInt = 0;
+	saddr, caddr	: TSockAddr; (* or TUnixSockAddr; *)
+	gsock, client	: TSocket;
+	csize			: TSockLen;
+
+
 (*
 **	print error message...
 *)
@@ -58,9 +71,8 @@ end;
 *)
 function getFirstWord(const source : String) : String;
 var	i, start : LongInt;
-	s : String;
+	s : String = '';
 begin
-	s := '';
 	for i := 1 to length(source) do
 		if source[i] <> ' ' then break;
 	start := i;
@@ -86,49 +98,47 @@ begin
 		if n > 0 then begin
 			WriteLn(sock, ' > ', cli);
 			cmd := getFirstWord(cli);
-			if cmd = 'test' then begin
-				scSendLn(sock, '+OK');
-				break;
-				end;
-			msg := '+OK';
+			if cmd = 'test' then msg := '+OK'
+			else if cmd = 'hello' then msg := '+Hello to you too'
+			else if cmd = 'down' then begin
+				inc(shutdown);
+				msg := '+Daemon is going down';
+				end
+			else
+				msg := '-ERR uknown command';
 			scSendLn(sock, msg);
 			WriteLn(sock, ' < ', msg);
 			end
-		else warn('connection closed');
-	until (n <= 0) or (cmd = 'quit');
+		else
+			warn('connection closed');
+	until (n <= 0) or (cmd = 'quit') or (shutdown > 0);
 	fpShutdown(sock, 2);
 	CloseSocket(sock);
 	WriteLn('Thread closed');
+	if shutdown > 0 then
+		fpShutdown(gsock, 2);
 	clerk := 0;
 end;
 
 (* === main === *)
-Var
-	saddr, caddr	: TSockAddr; (* or TUnixSockAddr; *)
-	host			: String;
-	sock, client	: TSocket;
-	domain, protc, port : LongInt;
-	csize			: TSockLen;
-
 begin
-	host   := 'localhost'; (* or '0.0.0.0' *)
-	port   := 4096;
-	domain := AF_INET;
-	protc  := IPPROTO_TCP;
-	sock   := fpSocket(domain, SOCK_STREAM, protc);
-	if sock <> -1 then begin
+	gsock   := fpSocket(domain, SOCK_STREAM, protc);
+	if gsock <> -1 then begin
 		saddr.sin_family := domain;
 		saddr.sin_port   := htons(port);
 		saddr.sin_addr   := StrToHostAddr(host);
-		if fpBind(sock, @saddr, sizeof(saddr)) = 0 then begin	(* allocate address and port *)
+		if fpBind(gsock, @saddr, sizeof(saddr)) = 0 then begin	(* allocate address and port *)
 			Writeln('Server started, waiting...');
-			if fpListen(sock, 20) = 0 then begin				(* start listen *)
+			if fpListen(gsock, 20) = 0 then begin				(* start listen *)
 				repeat
 					csize  := sizeof(caddr);
-  					client := fpAccept(sock, @caddr, @csize);	(* wait for connection, and return the client's socket *)
+  					client := fpAccept(gsock, @caddr, @csize);	(* wait for connection, and return the client's gsocket *)
 					if client <> -1 then
 						BeginThread(@clerk, pointer(client));	(* dont use pointer of static data *)
-				until client = -1;
+				until (client = -1) or (shutdown > 0);
+				WriteLn('Shuting down...');
+				fpShutdown(gsock, 2);
+				CloseSocket(gsock);
 				end
 			else warn('listen failed');
 			end
