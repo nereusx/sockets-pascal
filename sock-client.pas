@@ -33,10 +33,10 @@ end;
 *)
 function scRecvLn(sock : TSocket; var msg : String) : LongInt;
 var n   : LongInt;
-	buf : Array [0..2047] of Char;
+	buf : Array [0..1023] of Char;
 begin
 	msg := '';
-	n := fpRecv(sock, @buf, 2048, 0);
+	n := fpRecv(sock, @buf, 1024, 0);
 	if n > 0 then begin
 		buf[n] := #0;
 		while n > 0 do begin
