@@ -16,11 +16,10 @@ const
 	protc  = IPPROTO_TCP;
 
 Var
-	shutdown : LongInt = 0;
+	shutdown		: LongInt = 0;
 	saddr, caddr	: TSockAddr; (* or TUnixSockAddr; *)
 	gsock, client	: TSocket;
 	csize			: TSockLen;
-
 
 (*
 **	print error message...
@@ -101,11 +100,10 @@ begin
 			if cmd = 'test' then msg := '+OK'
 			else if cmd = 'hello' then msg := '+Hello to you too'
 			else if cmd = 'down' then begin
-				inc(shutdown);
 				msg := '+Daemon is going down';
+				inc(shutdown);
 				end
-			else
-				msg := '-ERR uknown command';
+			else msg := '-ERR uknown command';
 			scSendLn(sock, msg);
 			WriteLn(sock, ' < ', msg);
 			end
