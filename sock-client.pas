@@ -4,9 +4,16 @@
 *)
 
 Program SocketClient;
-{$mode fpc}
+{$MODE fpc}{$LONGSTRINGS+}{$CODEPAGE UTF8}
+{$DESCRIPTION Socket client example by using standard sockets}
 
 Uses Sockets;
+
+const
+	host   = 'localhost';
+	port   : LongInt = 4096;
+	domain = AF_INET; (* or AF_UNIX, or AF_BLUETOOTH. etc *)
+	protc  = IPPROTO_TCP;
 
 (*
 **	print error message...
@@ -24,7 +31,7 @@ const crlf  = #13#10;
 var		buf : string;
 begin
 	buf := ConCat(msg, crlf);
-	fpSend(sock, @buf[1], length(buf), 1);
+	fpSend(sock, @buf[1], length(buf), 0);
 end;
 
 (*
@@ -33,7 +40,7 @@ end;
 *)
 function scRecvLn(sock : TSocket; var msg : String) : LongInt;
 var n   : LongInt;
-	buf : Array [0..1023] of Char;
+	buf : Array [0..1024] of Char;
 begin
 	msg := '';
 	n := fpRecv(sock, @buf, 1024, 0);
@@ -55,15 +62,11 @@ end;
 (* === main === *)
 Var
 	saddr		: TSockAddr; (* or TUnixSockAddr; *)
-	host, msg	: string;
+	msg			: string;
 	sock		: TSocket;
-	domain, protc, port, n : LongInt;
+	n 			: LongInt;
 
 begin
-	host   := 'localhost';
-	port   := 4096;
-	domain := AF_INET; (* or AF_UNIX, or AF_BLUETOOTH. etc *)
-	protc  := IPPROTO_TCP;
 	sock   := fpSocket(domain, SOCK_STREAM, protc);
 	if sock <> -1 then begin
 		saddr.sin_family := domain;
@@ -74,11 +77,15 @@ begin
 				n := scRecvLn(sock, msg);
 				if n > 0 then begin
 					WriteLn('> ', msg);
-					scSendLn(sock, 'test master');
+					msg := 'test master';
+					scSendLn(sock, msg);
+					WriteLn('< ', msg);
 					n := scRecvLn(sock, msg);
 					if n > 0 then begin
 						WriteLn('> ', msg);
-						scSendLn(sock, 'quit master');
+						msg := 'quit';
+						scSendLn(sock, msg);
+						WriteLn('< ', msg);
 						n := scRecvLn(sock, msg);
 						if n > 0 then WriteLn('> ', msg);
 						end

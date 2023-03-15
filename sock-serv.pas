@@ -4,7 +4,8 @@
 *)
 
 Program SocketServer;
-{$mode fpc}
+{$MODE fpc}{$LONGSTRINGS+}{$CODEPAGE UTF8}
+{$DESCRIPTION Socket, multithread, server example by using standard sockets}
 
 Uses
 	{$ifdef unix}cthreads, {$endif} Sockets;
@@ -37,7 +38,7 @@ const crlf = #13#10;
 var buf : string;
 begin
 	buf := ConCat(msg, crlf);
-	fpSend(sock, @buf[1], length(buf), 1);
+	fpSend(sock, @buf[1], length(buf), 0);
 end;
 
 (*
@@ -46,7 +47,7 @@ end;
 *)
 function scRecvLn(sock : TSocket; var msg : String) : LongInt;
 var n : LongInt;
-	buf : Array [0..1023] of Char;
+	buf : Array [0..1024] of Char;
 begin
 	msg := '';
 	n := fpRecv(sock, @buf, 1024, 0);
@@ -91,14 +92,15 @@ var sock	 : TSocket;
 begin
 	sock := LongInt(p);
 	WriteLn('Thread created to serve ', sock, ' client.');
+	scSendLn(sock, 'Welcome to sock-serv, enter "quit" to end this thread');
 	repeat
-		scSendLn(sock, 'Welcome to sock-serv, enter "quit" to end this thread');
 		n := scRecvLn(sock, cli);
 		if n > 0 then begin
 			WriteLn(sock, ' > ', cli);
-			cmd := getFirstWord(cli);
+			cmd := lowercase(getFirstWord(cli));
 			if cmd = 'test' then msg := '+OK'
 			else if cmd = 'hello' then msg := '+Hello to you too'
+			else if cmd = 'quit' then msg := '+Quiting'
 			else if cmd = 'down' then begin
 				msg := '+Daemon is going down';
 				inc(shutdown);

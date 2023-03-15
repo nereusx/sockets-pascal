@@ -1,6 +1,6 @@
 #
 PC      := fpc
-PCFLAGS := -g
+PCFLAGS := -g -O2 -XS
 
 all: sock-serv sock-client
 
