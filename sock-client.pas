@@ -24,7 +24,7 @@ begin
 end;
 
 (* send/recieve functions *)
-{$INCLUDE common.pas}
+{$INCLUDE sock-lib.pas}
 
 (* === main === *)
 Var

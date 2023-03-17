@@ -31,7 +31,7 @@ begin
 end;
 
 (* send/recieve functions *)
-{$INCLUDE common.pas}
+{$INCLUDE sock-lib.pas}
 
 (*
 **	returns the first word of the string
